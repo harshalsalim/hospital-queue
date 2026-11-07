@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: hospital-queue
+  datasource:
+    url: jdbc:postgresql://localhost:5432/hospitalqueue?timezone=Asia/Kolkata
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  flyway:
+    enabled: true
