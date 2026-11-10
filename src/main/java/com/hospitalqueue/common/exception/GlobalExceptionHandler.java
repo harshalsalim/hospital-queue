@@ -82,6 +82,7 @@ public class GlobalExceptionHandler {
             String reason = resolved != null ? resolved.getReasonPhrase() : "Request failed";
             String detail = errorResponse.getBody().getDetail();
             return ResponseEntity.status(statusCode)
+                    .headers(errorResponse.getHeaders())
                     .body(ApiError.of("HTTP_" + statusCode.value(), detail != null ? detail : reason));
         }
         log.error("Unexpected error", ex);
