@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.hospitalqueue.admin.repository.HospitalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -25,7 +26,6 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import com.hospitalqueue.admin.dto.CreateHospitalRequest;
 import com.hospitalqueue.admin.dto.HospitalResponse;
 import com.hospitalqueue.admin.entity.Hospital;
-import com.hospitalqueue.admin.repository.HospitalRepository;
 import com.hospitalqueue.common.config.CacheErrorConfig;
 import com.hospitalqueue.common.config.CacheNames;
 

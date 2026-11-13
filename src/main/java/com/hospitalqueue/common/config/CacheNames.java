@@ -9,6 +9,9 @@ public final class CacheNames {
     /** The full specialty list. */
     public static final String SPECIALTIES = "specialties";
 
+    /** Doctor discovery pages and single doctors. */
+    public static final String DOCTORS = "doctors";
+
     private CacheNames() {
     }
 }

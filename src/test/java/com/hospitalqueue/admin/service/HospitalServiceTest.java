@@ -3,6 +3,7 @@ package com.hospitalqueue.admin.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,7 +41,9 @@ class HospitalServiceTest {
     private HospitalService hospitalService;
 
     @Test
-    void create_trimsNameAndAddressBeforeSaving() {
+    void create_checksAndSavesTheTrimmedNameAndAddress() {
+        when(hospitalRepository.existsByNameIgnoreCaseAndAddressIgnoreCase("City Hospital", "MG Road, Kochi"))
+                .thenReturn(false);
         when(hospitalRepository.save(any(Hospital.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         HospitalResponse response = hospitalService.create(
@@ -52,6 +55,36 @@ class HospitalServiceTest {
         assertThat(saved.getValue().getAddress()).isEqualTo("MG Road, Kochi");
         assertThat(response.name()).isEqualTo("City Hospital");
         assertThat(response.address()).isEqualTo("MG Road, Kochi");
+    }
+
+    @Test
+    void create_throwsConflictAndSavesNothingWhenTheSameNameAndAddressExist() {
+        when(hospitalRepository.existsByNameIgnoreCaseAndAddressIgnoreCase("City Hospital", "MG Road, Kochi"))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> hospitalService.create(
+                new CreateHospitalRequest(" City Hospital ", " MG Road, Kochi ")))
+                .isInstanceOf(ApiException.class)
+                .satisfies(thrown -> {
+                    ApiException exception = (ApiException) thrown;
+                    assertThat(exception.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(exception.getCode()).isEqualTo("HOSPITAL_EXISTS");
+                });
+
+        verify(hospitalRepository, never()).save(any(Hospital.class));
+    }
+
+    @Test
+    void create_allowsTheSameNameAtADifferentAddress() {
+        when(hospitalRepository.existsByNameIgnoreCaseAndAddressIgnoreCase("City Hospital", "Calicut Road, Thrissur"))
+                .thenReturn(false);
+        when(hospitalRepository.save(any(Hospital.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        HospitalResponse response = hospitalService.create(
+                new CreateHospitalRequest("City Hospital", "Calicut Road, Thrissur"));
+
+        assertThat(response.address()).isEqualTo("Calicut Road, Thrissur");
+        verify(hospitalRepository).save(any(Hospital.class));
     }
 
     @Test

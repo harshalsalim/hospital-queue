@@ -35,14 +35,23 @@ public class HospitalService {
 
     /**
      * Creates a hospital. Leading and trailing spaces are removed from name and address.
+     * A hospital is identified by name plus address ignoring case: the check here gives a clean 409,
+     * and the unique index {@code uq_hospital_name_address} (V4 migration) guarantees it even when
+     * two identical requests arrive at the same time.
      *
      * @param request validated request body
      * @return the saved hospital
+     * @throws ApiException 409 {@code HOSPITAL_EXISTS} when the same name and address already exist
      */
     @Transactional
     @CacheEvict(cacheNames = CacheNames.HOSPITALS, allEntries = true)
     public HospitalResponse create(CreateHospitalRequest request) {
-        Hospital saved = hospitalRepository.save(new Hospital(request.name().trim(), request.address().trim()));
+        String name = request.name().trim();
+        String address = request.address().trim();
+        if (hospitalRepository.existsByNameIgnoreCaseAndAddressIgnoreCase(name, address)) {
+            throw ApiException.conflict("HOSPITAL_EXISTS", "A hospital with this name and address already exists");
+        }
+        Hospital saved = hospitalRepository.save(new Hospital(name, address));
         return toResponse(saved);
     }
 

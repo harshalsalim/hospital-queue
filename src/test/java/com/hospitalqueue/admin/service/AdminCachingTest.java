@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.hospitalqueue.admin.repository.HospitalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -31,7 +32,6 @@ import com.hospitalqueue.admin.dto.CreateHospitalRequest;
 import com.hospitalqueue.admin.dto.CreateSpecialtyRequest;
 import com.hospitalqueue.admin.entity.Hospital;
 import com.hospitalqueue.admin.entity.Specialty;
-import com.hospitalqueue.admin.repository.HospitalRepository;
 import com.hospitalqueue.admin.repository.SpecialtyRepository;
 import com.hospitalqueue.common.config.CacheNames;
 import com.hospitalqueue.common.exception.ApiException;
