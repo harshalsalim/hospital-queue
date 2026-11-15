@@ -44,3 +44,16 @@ server:
 logging:
   pattern:
     level: "%5p [%X{requestId:-}]"
+
+# Booking settings
+app:
+  booking:
+    # Convenience fee charged per booked token, in paise (1000 paise = Rs 10).
+    convenience-fee-paise: 1000
+    # How long a patient's checkout holds a token while they pay, in seconds (900 = 15 minutes).
+    hold-seconds: 900
+
+  payment:
+    # DEVELOPMENT ONLY. Enables the fake payment callback endpoint, which lets anyone mark a checkout as paid.
+    # Remove this line (or set it to false) in every real deployment; the real gateway webhook replaces it.
+    stub-enabled: true

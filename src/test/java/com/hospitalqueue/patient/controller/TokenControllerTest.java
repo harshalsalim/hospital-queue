@@ -25,7 +25,6 @@ import com.hospitalqueue.common.exception.GlobalExceptionHandler;
 import com.hospitalqueue.patient.dto.TokenResponse;
 import com.hospitalqueue.patient.entity.TokenStatus;
 import com.hospitalqueue.patient.service.TokenService;
-import com.hospitalqueue.patient.service.TokenService.BookingResult;
 
 /**
  * API tests for {@link TokenController} together with {@link GlobalExceptionHandler}.
@@ -36,7 +35,6 @@ class TokenControllerTest {
 
     private static final UUID PATIENT_ID = UUID.randomUUID();
     private static final UUID SLOT_ID = UUID.randomUUID();
-    private static final String VALID_BODY = "{\"patientId\":\"" + PATIENT_ID + "\",\"slotId\":\"" + SLOT_ID + "\"}";
 
     @Mock
     private TokenService tokenService;
@@ -55,92 +53,14 @@ class TokenControllerTest {
                 Instant.parse("2026-11-12T04:30:00Z"));
     }
 
-    // ---- POST /api/tokens ----
-
     @Test
-    void book_aNewTokenReturns201() throws Exception {
-        UUID id = UUID.randomUUID();
-        when(tokenService.book(PATIENT_ID, SLOT_ID)).thenReturn(new BookingResult(sampleToken(id, 7), true));
-
-        mockMvc.perform(post("/api/tokens").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(id.toString()))
-                .andExpect(jsonPath("$.tokenNumber").value(7))
-                .andExpect(jsonPath("$.status").value("BOOKED"));
-    }
-
-    @Test
-    void book_anExistingTokenReturns200WithTheSameToken() throws Exception {
-        UUID id = UUID.randomUUID();
-        when(tokenService.book(PATIENT_ID, SLOT_ID)).thenReturn(new BookingResult(sampleToken(id, 3), false));
-
-        mockMvc.perform(post("/api/tokens").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(id.toString()))
-                .andExpect(jsonPath("$.tokenNumber").value(3));
-    }
-
-    @Test
-    void book_withMissingIdsReturns400WithAMessagePerField() throws Exception {
-        mockMvc.perform(post("/api/tokens").contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-                .andExpect(jsonPath("$.details.patientId").exists())
-                .andExpect(jsonPath("$.details.slotId").exists());
-
-        verifyNoInteractions(tokenService);
-    }
-
-    @Test
-    void book_withAnIdThatIsNotAUuidReturns400() throws Exception {
+    void directBookingWithoutPaymentIsNoLongerPossible() throws Exception {
         mockMvc.perform(post("/api/tokens").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"patientId\":\"abc\",\"slotId\":\"" + SLOT_ID + "\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
+                        .content("{\"patientId\":\"" + PATIENT_ID + "\",\"slotId\":\"" + SLOT_ID + "\"}"))
+                .andExpect(status().isNotFound());
 
         verifyNoInteractions(tokenService);
     }
-
-    @Test
-    void book_unknownPatientReturns404() throws Exception {
-        when(tokenService.book(PATIENT_ID, SLOT_ID)).thenThrow(ApiException.notFound("Patient", PATIENT_ID));
-
-        mockMvc.perform(post("/api/tokens").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
-    }
-
-    @Test
-    void book_aFullSessionReturns409() throws Exception {
-        when(tokenService.book(PATIENT_ID, SLOT_ID))
-                .thenThrow(ApiException.conflict("SLOT_FULL", "All tokens for this session are booked"));
-
-        mockMvc.perform(post("/api/tokens").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("SLOT_FULL"));
-    }
-
-    @Test
-    void book_aPausedSessionReturns409() throws Exception {
-        when(tokenService.book(PATIENT_ID, SLOT_ID))
-                .thenThrow(ApiException.conflict("SLOT_PAUSED", "Bookings are paused for this session"));
-
-        mockMvc.perform(post("/api/tokens").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("SLOT_PAUSED"));
-    }
-
-    @Test
-    void book_anEndedSessionReturns409() throws Exception {
-        when(tokenService.book(PATIENT_ID, SLOT_ID))
-                .thenThrow(ApiException.conflict("SLOT_ENDED", "This session has already ended"));
-
-        mockMvc.perform(post("/api/tokens").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("SLOT_ENDED"));
-    }
-
-    // ---- GET /api/tokens/{id} ----
 
     @Test
     void get_returns200WithTheToken() throws Exception {
@@ -149,7 +69,8 @@ class TokenControllerTest {
 
         mockMvc.perform(get("/api/tokens/{id}", id))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.tokenNumber").value(5));
+                .andExpect(jsonPath("$.tokenNumber").value(5))
+                .andExpect(jsonPath("$.status").value("BOOKED"));
     }
 
     @Test
@@ -158,7 +79,8 @@ class TokenControllerTest {
         when(tokenService.get(id)).thenThrow(ApiException.notFound("Token", id));
 
         mockMvc.perform(get("/api/tokens/{id}", id))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
     }
 
     @Test
@@ -169,8 +91,6 @@ class TokenControllerTest {
 
         verifyNoInteractions(tokenService);
     }
-
-    // ---- GET /api/patients/{patientId}/tokens ----
 
     @Test
     void listForPatient_returnsTheTokensAsAnArray() throws Exception {

@@ -235,6 +235,18 @@ class SlotServiceTest {
         assertThat(result.get(0).remainingTokens()).isEqualTo(23);
     }
 
+    // ---- exists ----
+
+    @Test
+    void exists_delegatesToTheRepository() {
+        UUID unknown = UUID.randomUUID();
+        when(slotRepository.existsById(SLOT_ID)).thenReturn(true);
+        when(slotRepository.existsById(unknown)).thenReturn(false);
+
+        assertThat(slotService.exists(SLOT_ID)).isTrue();
+        assertThat(slotService.exists(unknown)).isFalse();
+    }
+
     // ---- updateStatus ----
 
     @Test

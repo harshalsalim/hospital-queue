@@ -173,6 +173,23 @@ class TokenServiceTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    // ---- hasActiveToken ----
+
+    @Test
+    void hasActiveToken_isTrueWhenThePatientHoldsAnActiveTokenInTheSession() {
+        when(tokenRepository.findFirstByPatientIdAndSlotIdAndStatusIn(eq(PATIENT_ID), eq(SLOT_ID), anyCollection()))
+                .thenReturn(Optional.of(tokenWithNumber(2)));
+
+        assertThat(tokenService.hasActiveToken(PATIENT_ID, SLOT_ID)).isTrue();
+    }
+
+    @Test
+    void hasActiveToken_isFalseWhenThePatientHasNoActiveTokenInTheSession() {
+        noActiveTokenYet();
+
+        assertThat(tokenService.hasActiveToken(PATIENT_ID, SLOT_ID)).isFalse();
+    }
+
     // ---- get ----
 
     @Test

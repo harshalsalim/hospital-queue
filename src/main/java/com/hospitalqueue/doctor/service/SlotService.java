@@ -109,6 +109,17 @@ public class SlotService {
     }
 
     /**
+     * Cheap existence check for other modules, for example the queue.
+     *
+     * @param slotId slot id
+     * @return true when the session exists
+     */
+    @Transactional(readOnly = true)
+    public boolean exists(UUID slotId) {
+        return slotRepository.existsById(slotId);
+    }
+
+    /**
      * Pauses or resumes a session. Setting the status it already has is allowed and changes nothing.
      *
      * @param slotId slot id

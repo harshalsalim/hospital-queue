@@ -91,6 +91,19 @@ public class TokenService {
     }
 
     /**
+     * Tells whether the patient already holds an active token (booked, waiting or in consultation) in a session.
+     * Checkout uses this to refuse a second booking before any money is taken.
+     *
+     * @param patientId the patient
+     * @param slotId    the doctor session
+     * @return true when an active token exists
+     */
+    @Transactional(readOnly = true)
+    public boolean hasActiveToken(UUID patientId, UUID slotId) {
+        return findActive(patientId, slotId).isPresent();
+    }
+
+    /**
      * Finds one token.
      *
      * @param id token id
