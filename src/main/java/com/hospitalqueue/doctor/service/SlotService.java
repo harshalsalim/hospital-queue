@@ -109,6 +109,18 @@ public class SlotService {
     }
 
     /**
+     * Finds one session, for other modules that need to know its doctor, for example the consultation.
+     *
+     * @param slotId slot id
+     * @return the session
+     * @throws ApiException 404 when the session does not exist
+     */
+    @Transactional(readOnly = true)
+    public SlotResponse get(UUID slotId) {
+        return reload(slotId);
+    }
+
+    /**
      * Cheap existence check for other modules, for example the queue.
      *
      * @param slotId slot id

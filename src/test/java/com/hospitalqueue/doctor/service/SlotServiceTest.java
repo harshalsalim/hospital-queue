@@ -235,6 +235,28 @@ class SlotServiceTest {
         assertThat(result.get(0).remainingTokens()).isEqualTo(23);
     }
 
+    // ---- get ----
+
+    @Test
+    void get_returnsTheSessionIncludingItsDoctorAndHospital() {
+        Slot slot = new Slot(HOSPITAL_ID, DOCTOR_ID, TODAY.plusDays(1), LocalTime.of(9, 0), LocalTime.of(12, 0), 30);
+        when(slotRepository.findById(SLOT_ID)).thenReturn(Optional.of(slot));
+
+        SlotResponse response = slotService.get(SLOT_ID);
+
+        assertThat(response.doctorId()).isEqualTo(DOCTOR_ID);
+        assertThat(response.hospitalId()).isEqualTo(HOSPITAL_ID);
+        assertThat(response.maxTokens()).isEqualTo(30);
+    }
+
+    @Test
+    void get_unknownSessionThrowsNotFound() {
+        when(slotRepository.findById(SLOT_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> slotService.get(SLOT_ID))
+                .satisfies(thrown -> assertApiError(thrown, HttpStatus.NOT_FOUND, "NOT_FOUND"));
+    }
+
     // ---- exists ----
 
     @Test

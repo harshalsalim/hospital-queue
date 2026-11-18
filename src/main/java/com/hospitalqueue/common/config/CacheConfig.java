@@ -15,7 +15,8 @@ import org.springframework.data.redis.serializer.RedisSerializer;
  * Redis cache setup for read-heavy, rarely-changing data.
  *
  * <ul>
- *   <li>Every entry expires (TTL), so stale data cannot live forever.</li>
+ *   <li>Every entry expires (TTL), so stale data cannot live forever. The live queue snapshot lives only
+ *       3 seconds, because it describes a queue that moves.</li>
  *   <li>Writes and evictions are transaction-aware: they happen only after the database
  *       transaction commits, so a rolled-back change never reaches the cache.</li>
  *   <li>Values are cached as Java-serialized DTO records, so cached classes must implement
@@ -32,6 +33,7 @@ public class CacheConfig {
 
     private static final Duration DEFAULT_TTL = Duration.ofMinutes(10);
     private static final Duration SPECIALTY_TTL = Duration.ofHours(1);
+    private static final Duration QUEUE_TTL = Duration.ofSeconds(3);
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
@@ -45,6 +47,7 @@ public class CacheConfig {
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaults)
                 .withCacheConfiguration(CacheNames.SPECIALTIES, defaults.entryTtl(SPECIALTY_TTL))
+                .withCacheConfiguration(CacheNames.QUEUE, defaults.entryTtl(QUEUE_TTL))
                 .transactionAware()
                 .build();
     }

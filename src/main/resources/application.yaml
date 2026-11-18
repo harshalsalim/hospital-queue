@@ -57,3 +57,13 @@ app:
     # DEVELOPMENT ONLY. Enables the fake payment callback endpoint, which lets anyone mark a checkout as paid.
     # Remove this line (or set it to false) in every real deployment; the real gateway webhook replaces it.
     stub-enabled: true
+
+  queue:
+    # Average consultation length in minutes. Waiting-time estimates are "patients ahead" times this value.
+    average-consultation-minutes: 10
+
+  security:
+    # AES-256 key (Base64, exactly 32 bytes) used to encrypt clinical text before it is stored.
+    # The default below is a DEVELOPMENT key that is public in this file. Every real deployment must set the
+    # environment variable FIELD_ENCRYPTION_KEY from a secret manager; losing the key means losing the data.
+    field-encryption-key: ${FIELD_ENCRYPTION_KEY:aG9zcGl0YWwtcXVldWUtREVWLU9OTFkta2V5LTAwMDA=}

@@ -12,6 +12,9 @@ public final class CacheNames {
     /** Doctor discovery pages and single doctors. */
     public static final String DOCTORS = "doctors";
 
+    /** Live queue snapshot of a session; lives for only a few seconds and is cleared on every queue change. */
+    public static final String QUEUE = "queue";
+
     private CacheNames() {
     }
 }

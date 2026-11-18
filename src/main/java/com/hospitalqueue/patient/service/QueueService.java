@@ -3,11 +3,13 @@ package com.hospitalqueue.patient.service;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.hospitalqueue.common.config.CacheNames;
 import com.hospitalqueue.common.exception.ApiException;
 import com.hospitalqueue.doctor.service.SlotService;
 import com.hospitalqueue.patient.dto.TokenResponse;
@@ -23,6 +25,9 @@ import com.hospitalqueue.patient.repository.TokenRepository;
  * every operation is safe to repeat: asking for a state the token is already in returns the token unchanged, while
  * a transition that makes no sense (for example completing a token that was never called) is refused with
  * {@code INVALID_TOKEN_STATE}.
+ *
+ * <p>Every successful change evicts the session's cached queue snapshot (after the database change is committed),
+ * so the live queue views show it at once.
  *
  * <p>This service lives in the patient module because tokens belong to it, and the doctor module must not depend on
  * the patient module. Its endpoints serve the doctor's dashboard.
@@ -55,6 +60,7 @@ public class QueueService {
      * @return the token (already WAITING is fine and changes nothing)
      * @throws ApiException 404 unknown token; 409 {@code INVALID_TOKEN_STATE} when the token is past this step
      */
+    @CacheEvict(cacheNames = CacheNames.QUEUE, key = "'slot:' + #result.slotId()")
     @Transactional
     public TokenResponse checkIn(UUID tokenId) {
         int changed = tokenRepository.checkIn(tokenId);
@@ -70,6 +76,7 @@ public class QueueService {
      * @throws ApiException 404 unknown session; 409 {@code CONSULTATION_IN_PROGRESS} when the previous patient has not
      *                      been completed yet (also when two calls race), {@code QUEUE_EMPTY} when nobody is waiting
      */
+    @CacheEvict(cacheNames = CacheNames.QUEUE, key = "'slot:' + #result.slotId()")
     public TokenResponse callNext(UUID slotId) {
         if (!slotService.exists(slotId)) {
             throw ApiException.notFound("Slot", slotId);
@@ -98,6 +105,7 @@ public class QueueService {
      * @return the token (already COMPLETED is fine and changes nothing)
      * @throws ApiException 404 unknown token; 409 {@code INVALID_TOKEN_STATE} when the patient was never called
      */
+    @CacheEvict(cacheNames = CacheNames.QUEUE, key = "'slot:' + #result.slotId()")
     @Transactional
     public TokenResponse complete(UUID tokenId) {
         int changed = tokenRepository.complete(tokenId);
@@ -111,6 +119,7 @@ public class QueueService {
      * @return the token (already NO_SHOW is fine and changes nothing)
      * @throws ApiException 404 unknown token; 409 {@code INVALID_TOKEN_STATE} when the token is already finished
      */
+    @CacheEvict(cacheNames = CacheNames.QUEUE, key = "'slot:' + #result.slotId()")
     @Transactional
     public TokenResponse markNoShow(UUID tokenId) {
         int changed = tokenRepository.markNoShow(tokenId);

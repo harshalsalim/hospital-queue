@@ -48,4 +48,15 @@ public interface TokenRepository extends JpaRepository<Token, UUID> {
     @Query(value = "UPDATE token SET status = 'NO_SHOW', completed_at = now(), updated_at = now() "
             + "WHERE id = :id AND status IN ('BOOKED', 'WAITING', 'IN_CONSULTATION')", nativeQuery = true)
     int markNoShow(@Param("id") UUID id);
+
+    /** The tokens of a session that have one of the given statuses, lowest token number first. */
+    List<Token> findBySlotIdAndStatusInOrderByTokenNumberAsc(UUID slotId, Collection<TokenStatus> statuses);
+
+    /** How many tokens of a session have each status (one row per status that occurs). */
+    @Query("select new com.hospitalqueue.patient.repository.TokenStatusCount(t.status, count(t)) "
+            + "from Token t where t.slotId = :slotId group by t.status")
+    List<TokenStatusCount> countTokensByStatus(@Param("slotId") UUID slotId);
+
+    /** How many tokens of a session with a lower number than the given one have one of the given statuses. */
+    long countBySlotIdAndTokenNumberLessThanAndStatusIn(UUID slotId, int tokenNumber, Collection<TokenStatus> statuses);
 }
